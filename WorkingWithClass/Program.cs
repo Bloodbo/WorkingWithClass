@@ -12,7 +12,7 @@ internal class Program
 	};
 	private static void Main(string[] args)
 	{
-		List<Items> items = new List<Items>();
+		List<Items> items = LoadFromJson();
 		CallMenu(items);
 	}
 	public static void PrintAll(List<Items> items)
@@ -34,11 +34,11 @@ internal class Program
 		bool flag = true;
 		while (flag == true)
 		{
-			Console.WriteLine("1 - начать добавление объекта\n2 - выход" +
-			"\n3 - вывод всех\n4 - поиск по названию объекта\n5 - удаление по названию" +
-			"\n6 - отсортировать по названию\n7 - статистика по создателям" +
-			"\n8 - редактировать предметыт\n9 -	сортировка по количеству" +
-			"\n10 - сохранение в JSON файл списка");
+			Console.WriteLine("1 - начать добавление объекта\n2 - выход"
+				+ "\n3 - вывод всех\n4 - поиск по названию объекта\n5 - удаление по названию"
+				+ "\n6 - отсортировать по названию\n7 - статистика по создателям"
+				+ "\n8 - редактировать предметы\n9 - сортировка по количеству"
+				+ "\n10 - сохранение в JSON файл списка");
 			string answerChoiceUser = ReadLine();
 			if (CheckIntTryParse(answerChoiceUser, out int ProofChoice))
 			{
@@ -53,6 +53,7 @@ internal class Program
 						{
 							Console.ForegroundColor = ConsoleColor.Red;
 							Console.WriteLine("Выход из программы.");
+							SaveForJSON(items);
 							flag = false;
 							break;
 						}
@@ -116,8 +117,10 @@ internal class Program
 					}
 					case 9:
 					{
+							Console.WriteLine("Отсортированный список по количеству:\n");
+							PrintAll(SortByAmount(items));
 							break;
-						}
+					}
 					case 10:
 					{
 						if(items != null)
@@ -133,7 +136,15 @@ internal class Program
 						}
 				}
 			}
+			else
+			{
+				Console.WriteLine("Некорректный ввод. Пожалуйста, введите число от 1 до 10.");
+			}
 		}
+	}
+	public static List<Items> SortByAmount(List<Items> items)
+	{
+		return items.OrderBy(item => item.amountItems).ToList();
 	}
 	public static void EditItem(List<Items> items, string input)
 	{
@@ -149,7 +160,7 @@ internal class Program
 				"\n4 - изменить кол-во" +
 				"\n0 - выход");
 				string choiceEdit = ReadLine();
-				if (CheckStr(choiceEdit) && CheckIntTryParse(choiceEdit, out int choiceProof))
+				if (CheckIntTryParse(choiceEdit, out int choiceProof))
 				{
 					switch (choiceProof)
 					{
@@ -221,6 +232,28 @@ internal class Program
 		string json = JsonSerializer.Serialize(items, JsonOptions);
 		File.WriteAllText(Path, json, Encoding.UTF8);
 	}
+	public static List<Items> LoadFromJson()
+	{
+		if (File.Exists(Path))
+		{
+			// Сначала читаем текст из файла
+			string jsonText = File.ReadAllText(Path);
+			List<Items> jsonLoader = JsonSerializer.Deserialize<List<Items>>(jsonText, JsonOptions);
+			if (jsonLoader != null)
+			{
+				return jsonLoader;
+			}
+			else
+			{
+			// возрат пустого списка
+				return new List<Items>();
+			}
+		}
+		else
+		{
+			return new List<Items>();
+		}
+	}
 	public static List<Items> SortByName(List<Items> items)
 	{
 		var SortList = items.OrderBy(n => n.nameItem).ToList();
@@ -281,7 +314,7 @@ internal class Program
 	}
 	public static bool CheckStr(string InPut)
 	{
-		if (!string.IsNullOrEmpty(InPut) && InPut.Length >= 3 && !string.IsNullOrWhiteSpace(InPut))
+		if (!string.IsNullOrEmpty(InPut) && !string.IsNullOrWhiteSpace(InPut))
 		{
 			return true;
 		}
@@ -292,8 +325,9 @@ internal class Program
 		result = 0;
 		if (!string.IsNullOrEmpty(InPut))
 		{
-			if (int.TryParse(InPut, out int AmountItems) && AmountItems > 0)
+			if (int.TryParse(InPut, out int AmountItems))
 			{
+				result = AmountItems;
 				return true;
 			}
 		}
